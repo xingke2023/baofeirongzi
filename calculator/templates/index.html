@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>香港保費融資計算器</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="app-container">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <h1>🏦 香港保費融資計算器</h1>
+      <p class="header-sub">Premium Financing Calculator</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="addScheme()">＋ 新增方案</button>
+      <button class="btn btn-primary" onclick="calculateAll()">📊 計算</button>
+    </div>
+  </header>
+
+  <!-- Global Params Bar -->
+  <div class="global-params-bar">
+    <div class="gp-toggle-row">
+      <span class="global-params-label">公共參數</span>
+      <button class="gp-toggle-btn" id="gpToggleBtn" onclick="toggleGlobalParams()">收起 ▲</button>
+    </div>
+
+    <div class="global-params-inner" id="gpInner">
+      <!-- Group 1: 保費 -->
+      <div class="gp-block">
+        <div class="gp-block-title">保費設置</div>
+        <div class="gp-row">
+          <div class="gp-group">
+            <label>每期保費 (USD)</label>
+            <input type="number" id="gp_first_premium_usd" value="625000" step="1000" inputmode="numeric">
+          </div>
+          <div class="gp-group">
+            <label>供款期 (年)</label>
+            <input type="number" id="gp_pay_years" value="2" step="1" min="1" max="20" inputmode="numeric">
+          </div>
+          <div class="gp-group">
+            <label>首年折扣 (%)</label>
+            <input type="number" id="gp_first_year_discount_pct" value="7" step="0.1" min="0" max="100" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>額外折扣 (%)</label>
+            <input type="number" id="gp_extra_discount_pct" value="0" step="0.1" min="0" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>首日退保比例 (%)</label>
+            <input type="number" id="gp_day1_sv_ratio_pct" value="77.77" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: 貸款 -->
+      <div class="gp-block">
+        <div class="gp-block-title">貸款設置</div>
+        <div class="gp-row">
+          <div class="gp-group">
+            <label>貸款成數 LTV (%)</label>
+            <input type="number" id="gp_ltv_ratio_pct" value="95" step="0.5" min="0" max="100" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>手續費率 (%)</label>
+            <input type="number" id="gp_handling_fee_pct" value="1" step="0.1" min="0" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 3: 利率 -->
+      <div class="gp-block">
+        <div class="gp-block-title">利率設置</div>
+        <div class="gp-row">
+          <div class="gp-group">
+            <label>最優惠利率 P (%)</label>
+            <input type="number" id="gp_prime_rate_pct" value="5.25" step="0.25" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>利率優惠 (%)</label>
+            <input type="number" id="gp_interest_spread_pct" value="-1.7" step="0.1" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>每年遞減 (bps)</label>
+            <input type="number" id="gp_interest_decline_bps" value="25" step="5" min="0" inputmode="numeric">
+          </div>
+          <div class="gp-group">
+            <label>利率下限 (%)</label>
+            <input type="number" id="gp_interest_floor_pct" value="2.3" step="0.1" min="0" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 4: 其他 -->
+      <div class="gp-block">
+        <div class="gp-block-title">其他</div>
+        <div class="gp-row">
+          <div class="gp-group">
+            <label>終期紅利實現率 (%)</label>
+            <input type="number" id="gp_terminal_bonus_realization_pct" value="100" step="5" min="0" max="100" inputmode="numeric">
+          </div>
+          <div class="gp-group">
+            <label>USD/HKD</label>
+            <input type="number" id="gp_usd_to_hkd" value="7.8" step="0.01" inputmode="decimal">
+          </div>
+          <div class="gp-group">
+            <label>USD/RMB</label>
+            <input type="number" id="gp_usd_to_rmb" value="7.28" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Computed summary strip -->
+    <div class="gp-computed" id="gpComputed">
+      <div class="gp-computed-grid">
+        <div class="gp-kv"><span class="gp-k">總保費</span><strong id="gc_total_premium">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">淨保費</span><strong id="gc_net_premium">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">首日退保</span><strong id="gc_day1_sv">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">銀行貸款</span><strong id="gc_loan" class="val-highlight">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">客戶自付</span><strong id="gc_outlay" class="val-highlight">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">自付比例</span><strong id="gc_ratio">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">槓桿</span><strong id="gc_leverage" class="val-highlight">—</strong></div>
+        <div class="gp-kv"><span class="gp-k">首年利率</span><strong id="gc_rate">—</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schemes Area -->
+  <div class="schemes-area">
+    <div id="schemesList" class="schemes-list"></div>
+  </div>
+
+  <!-- Fixed Calculate Button (mobile) -->
+  <div class="fab-calc" id="fabCalc">
+    <button class="btn btn-primary btn-fab" onclick="calculateAll()">📊 計算對比</button>
+  </div>
+
+  <!-- Results Area -->
+  <div class="results-area" id="resultsArea" style="display:none">
+    <div id="resultsContent"></div>
+  </div>
+
+</div>
+
+<!-- Year Row Template -->
+<template id="yearRowTemplate">
+  <tr class="sv-row">
+    <td><input type="number" class="sv-input year-input" placeholder="年" min="1" max="50" onchange="updateSVTotal(this)" inputmode="numeric"></td>
+    <td><input type="number" class="sv-input" data-sv="guaranteed" placeholder="0" onchange="updateSVTotal(this)" inputmode="numeric"></td>
+    <td><input type="number" class="sv-input" data-sv="dividend" placeholder="0" onchange="updateSVTotal(this)" inputmode="numeric"></td>
+    <td><input type="number" class="sv-input" data-sv="terminal" placeholder="0" onchange="updateSVTotal(this)" inputmode="numeric"></td>
+    <td><input class="sv-total-input" readonly placeholder="合計"></td>
+    <td><button class="btn-danger-sm" onclick="removeYearRow(this)">✕</button></td>
+  </tr>
+</template>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
